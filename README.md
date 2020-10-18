@@ -2,7 +2,7 @@
 Code for Paper "SWAFN: Sentimental Words Aware Fusion Network for Multimodal Sentiment Analysis", COLING2020
 
 
-###requires:  
+### requires:  
 python > 3.6,  
 pytorch == 1.4.0,  
 sklearn,  
