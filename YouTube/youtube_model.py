@@ -267,62 +267,55 @@ def train_net(X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentim
     print(config)
     sys.stdout.flush()
 
+if __name__ == '__main__':
+    X_train_emb, X_train_vedio, X_train_audio, y_train, X_valid_emb, X_valid_vedio, X_valid_audio, y_valid, X_test_emb, \
+    X_test_vedio, X_test_audio, y_test, y_train_onehot, y_valid_onehot, y_test_onehot = load_saved_data()
+    y_train_sentiment = np.load('y_train_sentiment.npy')
+    y_valid_sentiment = np.load('y_valid_sentiment.npy')
+    y_test_sentiment = np.load('y_test_sentiment.npy')
 
-X_train_emb, X_train_vedio, X_train_audio, y_train, X_valid_emb, X_valid_vedio, X_valid_audio, y_valid, X_test_emb, \
-X_test_vedio, X_test_audio, y_test, y_train_onehot, y_valid_onehot, y_test_onehot = load_saved_data()
-y_train_sentiment = np.load('y_train_sentiment.npy')
-y_valid_sentiment = np.load('y_valid_sentiment.npy')
-y_test_sentiment = np.load('y_test_sentiment.npy')
+    train_mask = np.load('train_mask.npy')
+    valid_mask = np.load('valid_mask.npy')
+    test_mask = np.load('test_mask.npy')
 
-train_mask = np.load('train_mask.npy')
-valid_mask = np.load('valid_mask.npy')
-test_mask = np.load('test_mask.npy')
-#
+    X_train_emb = X_train_emb.swapaxes(0, 1)
+    X_valid_emb = X_valid_emb.swapaxes(0, 1)
+    X_test_emb = X_test_emb.swapaxes(0, 1)
 
-#
-X_train_emb = X_train_emb.swapaxes(0, 1)
-X_valid_emb = X_valid_emb.swapaxes(0, 1)
-X_test_emb = X_test_emb.swapaxes(0, 1)
+    X_train_vedio = X_train_vedio.swapaxes(0, 1)
+    X_valid_vedio = X_valid_vedio.swapaxes(0, 1)
+    X_test_vedio = X_test_vedio.swapaxes(0, 1)
 
-X_train_vedio = X_train_vedio.swapaxes(0, 1)
-X_valid_vedio = X_valid_vedio.swapaxes(0, 1)
-X_test_vedio = X_test_vedio.swapaxes(0, 1)
+    X_train_audio = X_train_audio.swapaxes(0, 1)
+    X_valid_audio = X_valid_audio.swapaxes(0, 1)
+    X_test_audio = X_test_audio.swapaxes(0, 1)
 
-X_train_audio = X_train_audio.swapaxes(0, 1)
-X_valid_audio = X_valid_audio.swapaxes(0, 1)
-X_test_audio = X_test_audio.swapaxes(0, 1)
+    #
+    print(X_train_emb.shape)
+    print(X_valid_audio.shape)
+    print(X_test_emb.shape)
+    print(y_train.shape)
 
-#
-print(X_train_emb.shape)
-print(X_valid_audio.shape)
-print(X_test_emb.shape)
-print(y_train.shape)
-
-
-num = 0
-while True:
     config = dict()
     config["input_dims"] = [300, 74, 36]
-    hl = random.choice([100, 128])
-    ha = random.choice([10, 20, 30, 40, 50])
-    hv = random.choice([10, 20, 30, 40, 50])
+    hl = 100
+    ha = 20
+    hv = 20
 
     config["h_dims"] = [hl, ha, hv]
 
-    config["final_dims"] = random.choice([x for x in range(100, 201, 100)])
-    config["batchsize"] = random.choice([8, 16, 32, 64])
+    config["final_dims"] = 200
+    config["batchsize"] = 16
     config["num_epochs"] = 25
-    config["lr"] = random.choice(
-       [0.0005, 0.0006, 0.0007, 0.0008, 0.0009, 0.001, 0.002, 0.003,
-       0.004, 0.005])
-    config["h_dim"] = random.choice([100, 128])
-    config['dropout1'] = random.choice([0.1, 0.2, 0.3, 0.4, 0.5])
-    config['dropout2'] = random.choice([0.1, 0.2, 0.3, 0.4, 0.5])
+    config["lr"] = 0.0005
+    config["h_dim"] = 100
+    config['dropout1'] = 0.5
+    config['dropout2'] = 0.1
 
-    config['a'] = random.choice([0.1, 0.15, 0.2, 0.25, 0.3])
-    num += 1
-    print('num: ', num)
-    train_net(X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentiment, X_valid_emb, X_valid_vedio, X_valid_audio,
+    config['a'] = 0.25
+
+    train_net(X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentiment, X_valid_emb, X_valid_vedio,
+              X_valid_audio,
               y_valid, X_test_emb, X_test_vedio, X_test_audio, y_test, config)
 
 
