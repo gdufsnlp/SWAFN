@@ -15,7 +15,6 @@ import json, os, ast, h5py
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score, f1_score
-import pickle
 import sys
 
 print(torch.__version__)
@@ -62,7 +61,7 @@ class Net(nn.Module):
         self.coattention1 = Coattention(self.dh_l, self.dh_v)
         self.coattention2 = Coattention(self.dh_v, self.dh_a)
 
-        self.aggregateLSTM = nn.LSTM(self.dh_a*2 + self.dh_v*2+self.dh_l+self.dh_a*2, self.h_dim, bidirectional=False, batch_first=True)
+        self.aggregateLSTM = nn.LSTM(self.dh_a*2 + self.dh_v * 2 + self.dh_l, self.h_dim, bidirectional=False, batch_first=True)
 
         self.dropout1 = nn.Dropout(config["dropout1"])
         self.dropout2 = nn.Dropout(config["dropout2"])
@@ -149,6 +148,7 @@ def train_net(X_train, y_train, y_train_sentiment,  X_valid, y_valid, y_valid_se
             loss = criterion(predictions, batch_y)
             predictions1 = F.sigmoid(predictions1)
             loss1 = criterion1(predictions1, batch_y_s)
+            loss1 = loss1.masked_select(mask).mean()
             loss_total = (1 - config['a']) * loss + config['a'] * loss1
             loss_total.backward()
             # loss.backward()
@@ -157,29 +157,37 @@ def train_net(X_train, y_train, y_train_sentiment,  X_valid, y_valid, y_valid_se
             epoch_loss += loss_total.item()
         return epoch_loss / num_batches
 
-    def evaluate(model, X_valid, y_valid, y_valid_sentiment, criterion):
-
+    def evaluate(model, X_valid, y_valid, criterion, batchsize=64):
+        epoch_loss = 0
         model.eval()
         with torch.no_grad():
-            batch_X = torch.Tensor(X_valid)
-            batch_y = torch.Tensor(y_valid)
-            # batch_y_s = torch.Tensor(y_valid_sentiment)
-            predictions, _ = model.forward(batch_X)
-            loss = criterion(predictions, batch_y)
-            # predictions1 = F.sigmoid(predictions1)
-            # loss1 = criterion1(predictions1, batch_y_s)
-            # loss_total = (1 - config['a']) * loss + config['a'] * loss1
-            epoch_loss = loss.item()
+            total_n = X_valid.shape[1]
+            num_batches = total_n / batchsize
+            for batch in range(int(num_batches) + 1):
+                start = batch * batchsize
+                end = (batch + 1) * batchsize
+                batch_X = torch.Tensor(X_valid[:, start:end])
+                batch_y = torch.Tensor(y_valid[start:end])
+                predictions, _ = model.forward(batch_X)
+                loss = criterion(predictions, batch_y)
+                epoch_loss += loss.item()
         return epoch_loss
 
-    def predict(model, X_test):
+    def predict(model, X_test, batchsize=64):
+        batch_preds = []
         model.eval()
         with torch.no_grad():
-            batch_X = torch.Tensor(X_test)
-            predictions, predictions1 = model.forward(batch_X)
-            predictions = predictions.cpu().data.numpy()
-
-        return predictions
+            total_n = X_test.shape[1]
+            num_batches = total_n / batchsize
+            for batch in range(int(num_batches) + 1):
+                start = batch * batchsize
+                end = (batch + 1) * batchsize
+                batch_X = torch.Tensor(X_test[:, start:end])
+                predictions, _ = model.forward(batch_X)
+                predictions = predictions.cpu().data.numpy()
+                batch_preds.append(predictions)
+            batch_preds = np.concatenate(batch_preds, axis=0)
+        return batch_preds
 
     # timing
     start_time = time.time()
@@ -191,17 +199,17 @@ def train_net(X_train, y_train, y_train_sentiment,  X_valid, y_valid, y_valid_se
 
     for epoch in range(config["num_epochs"]):
         train_loss = train(model,config["batchsize"],X_train, y_train, y_train_sentiment, optimizer, criterion)
-        valid_loss = evaluate(model, X_valid, y_valid, y_valid_sentiment, criterion)
+        valid_loss = evaluate(model, X_valid, y_valid, criterion)
         # scheduler.step(valid_loss)
         if valid_loss <= best_valid:
             # save model
             best_valid = valid_loss
             print(epoch, train_loss, valid_loss, 'saving model')
-            torch.save(model, 'mosi_model_with_word_tasks.pt')
+            torch.save(model, 'mosi_model.pt')
         else:
             print(epoch, train_loss, valid_loss)
 
-    model = torch.load('mosi_model_with_word_tasks.pt', map_location='cpu')
+    model = torch.load('mosi_model.pt', map_location='cpu')
 
     predictions = predict(model, X_test)
 
@@ -221,48 +229,46 @@ def train_net(X_train, y_train, y_train_sentiment,  X_valid, y_valid, y_valid_se
     print(config)
     sys.stdout.flush()
 
-X_train, y_train, X_valid, y_valid, X_test, y_test = load_saved_data()
+if __name__ == '__main__':
 
-y_train_sentiment = np.load('y_train_sentiment.npy')
-y_valid_sentiment = np.load('y_valid_sentiment.npy')
-y_test_sentiment = np.load('y_test_sentiment.npy')
+    X_train, y_train, X_valid, y_valid, X_test, y_test = load_saved_data()
 
-train_mask = np.load('train_mask.npy')
-valid_mask = np.load('valid_mask.npy')
-test_mask = np.load('test_mask.npy')
+    y_train_sentiment = np.load('y_train_sentiment.npy')
+    y_valid_sentiment = np.load('y_valid_sentiment.npy')
+    y_test_sentiment = np.load('y_test_sentiment.npy')
 
-#
-X_train = X_train.swapaxes(0, 1)
-X_valid = X_valid.swapaxes(0, 1)
-X_test = X_test.swapaxes(0, 1)
+    train_mask = np.load('train_mask.npy')
+    valid_mask = np.load('valid_mask.npy')
+    test_mask = np.load('test_mask.npy')
 
-#
-print(X_train.shape)
-print(y_train.shape)
-print(X_valid.shape)
-print(y_valid.shape)
-print(X_test.shape)
-print(y_test.shape)
+    #
+    X_train = X_train.swapaxes(0, 1)
+    X_valid = X_valid.swapaxes(0, 1)
+    X_test = X_test.swapaxes(0, 1)
 
-num = 0
-while True:
+    #
+    print(X_train.shape)
+    print(y_train.shape)
+    print(X_valid.shape)
+    print(y_valid.shape)
+    print(X_test.shape)
+    print(y_test.shape)
+
     config = dict()
     config["input_dims"] = [300, 5, 20]
-    hl = random.choice([100, 128])
-    ha = random.choice([10, 20, 30, 40, 50])
-    hv = random.choice([10, 20, 30, 40, 50])
+    hl = 100
+    ha = 50
+    hv = 30
 
     config["h_dims"] = [hl, ha, hv]
 
-    config["final_dims"] = random.choice([x for x in range(100, 201, 100)])
-    config["batchsize"] = random.choice([16, 32, 64])
+    config["final_dims"] = 100
+    config["batchsize"] = 16
     config["num_epochs"] = 20
-    config["lr"] = random.choice([0.0005, 0.0006, 0.0007, 0.0008, 0.0009, 0.001, 0.002])
-    config["h_dim"] = random.choice([100, 128])
-    config['dropout1'] = random.choice([0.1, 0.2, 0.3, 0.4, 0.5])
-    config['dropout2'] = random.choice([0.1, 0.2, 0.3, 0.4, 0.5])
-    config['a'] = random.choice([0.1, 0.15, 0.2, 0.25, 0.3])
-    num += 1
-    print('num: ', num)
-    train_net(X_train, y_train, y_train_sentiment,  X_valid, y_valid, y_valid_sentiment, X_test, y_test, y_test_sentiment, config)
-
+    config["lr"] = 0.0006
+    config["h_dim"] = 128
+    config['dropout1'] = 0.5
+    config['dropout2'] = 0.2
+    config['a'] = 0.3
+    train_net(X_train, y_train, y_train_sentiment, X_valid, y_valid, y_valid_sentiment, X_test, y_test,
+              y_test_sentiment, config)
