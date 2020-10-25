@@ -1,5 +1,4 @@
 import numpy as np
-# from process_data import *
 
 import random
 import torch
@@ -182,7 +181,6 @@ def train_net(X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentim
     torch.manual_seed(111)  #
     model = Net(config)
 
-    # optimizer = optim.Adam(model.parameters(), lr=config["lr"])
     optimizer = optim.Adam(model.parameters(), lr=config["lr"])
 
     criterion = nn.CrossEntropyLoss()
@@ -193,14 +191,13 @@ def train_net(X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentim
     criterion = criterion.to(device)
     criterion1 = criterion1.to(device)
 
-    # scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=100, factor=0.5, verbose=True)
 
     def train(model, batchsize, X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentiment, optimizer, criterion):
         epoch_loss = 0
         model.train()
         total_n = X_train_emb.shape[1]
-        num_batches = total_n / batchsize
-        for batch in range(int(num_batches)):
+        num_batches = int(total_n / batchsize) + 1
+        for batch in range(num_batches):
             start = batch * batchsize
             end = (batch + 1) * batchsize
             optimizer.zero_grad()
@@ -228,8 +225,8 @@ def train_net(X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentim
         model.eval()
         with torch.no_grad():
             total_n = X_valid_emb.shape[1]
-            num_batches = total_n / batchsize
-            for batch in range(int(num_batches) + 1):
+            num_batches = int(total_n / batchsize) + 1
+            for batch in range(num_batches):
                 start = batch * batchsize
                 end = (batch + 1) * batchsize
                 batch_X_embed = torch.Tensor(X_valid_emb[:, start:end])
@@ -239,15 +236,15 @@ def train_net(X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentim
                 predictions, predictions1 = model.forward(batch_X_embed, batch_X_v, batch_X_a)
                 loss = criterion(predictions, batch_y).item()
                 epoch_loss += loss
-        return epoch_loss
+        return epoch_loss / num_batches
 
     def predict(model, X_test_emb, X_test_vedio, X_test_audio, batchsize=64):
         batch_preds = []
         model.eval()
         with torch.no_grad():
             total_n = X_test_emb.shape[1]
-            num_batches = total_n / batchsize
-            for batch in range(int(num_batches) + 1):
+            num_batches = int(total_n / batchsize) + 1
+            for batch in range(num_batches):
                 start = batch * batchsize
                 end = (batch + 1) * batchsize
                 batch_X_embed = torch.Tensor(X_test_emb[:, start:end])
@@ -347,9 +344,10 @@ if __name__ == '__main__':
     config["lr"] = 0.0004
     config["h_dim"] = 100
     config['dropout1'] = 0.3
-    config['dropout2'] = 0.3
+    config['dropout2'] = 0.4
 
     config['a'] = 0.25
-    train_net(X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentiment, X_valid_emb, X_valid_vedio, X_valid_audio,
+    train_net(X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentiment, X_valid_emb, X_valid_vedio,
+              X_valid_audio,
               y_valid, X_test_emb, X_test_vedio, X_test_audio, y_test, config)
 
