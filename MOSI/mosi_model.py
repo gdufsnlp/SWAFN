@@ -1,6 +1,4 @@
 import numpy as np
-# from process_data import *
-
 import random
 import torch
 
@@ -254,24 +252,24 @@ if __name__ == '__main__':
     print(X_test.shape)
     print(y_test.shape)
 
-    while True:
-        config = dict()
-        config["input_dims"] = [300, 5, 20]
-        hl = 100
-        ha = 50
-        hv = 30
+    config = dict()
+    config["input_dims"] = [300, 5, 20]
+    hl = 100
+    ha = 50
+    hv = 30
 
-        config["h_dims"] = [hl, ha, hv]
+    config["h_dims"] = [hl, ha, hv]
 
-        config["final_dims"] = 100
-        config["batchsize"] = 16
-        config["num_epochs"] = 20
-        config["lr"] = 0.0006
-        config["h_dim"] = 128
-        config['dropout1'] = 0.5
-        config['dropout2'] = 0.2
-        config['a'] = 0.3
+    config["final_dims"] = 100
+    config["batchsize"] = 16
+    config["num_epochs"] = 20
+    config["lr"] = 0.0006
+    config["h_dim"] = 128
+    config['dropout1'] = 0.5
+    config['dropout2'] = 0.2
+    config['a'] = 0.3
 
-        train_net(X_train, y_train, y_train_sentiment, X_valid, y_valid, y_valid_sentiment, X_test, y_test,
-                  y_test_sentiment, config)
+    train_net(X_train, y_train, y_train_sentiment, X_valid, y_valid, y_valid_sentiment, X_test, y_test,
+              y_test_sentiment, config)
+
 
