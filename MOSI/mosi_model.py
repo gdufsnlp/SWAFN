@@ -135,8 +135,8 @@ def train_net(X_train, y_train, y_train_sentiment,  X_valid, y_valid, y_valid_se
         epoch_loss = 0
         model.train()
         total_n = X_train.shape[1]
-        num_batches = total_n / batchsize
-        for batch in range(int(num_batches)):
+        num_batches = int(total_n / batchsize) + 1
+        for batch in range(num_batches):
             start = batch * batchsize
             end = (batch + 1) * batchsize
             optimizer.zero_grad()
@@ -162,8 +162,8 @@ def train_net(X_train, y_train, y_train_sentiment,  X_valid, y_valid, y_valid_se
         model.eval()
         with torch.no_grad():
             total_n = X_valid.shape[1]
-            num_batches = total_n / batchsize
-            for batch in range(int(num_batches) + 1):
+            num_batches = int(total_n / batchsize) + 1
+            for batch in range(num_batches):
                 start = batch * batchsize
                 end = (batch + 1) * batchsize
                 batch_X = torch.Tensor(X_valid[:, start:end])
@@ -171,15 +171,15 @@ def train_net(X_train, y_train, y_train_sentiment,  X_valid, y_valid, y_valid_se
                 predictions, _ = model.forward(batch_X)
                 loss = criterion(predictions, batch_y)
                 epoch_loss += loss.item()
-        return epoch_loss
+        return epoch_loss / num_batches
 
     def predict(model, X_test, batchsize=64):
         batch_preds = []
         model.eval()
         with torch.no_grad():
             total_n = X_test.shape[1]
-            num_batches = total_n / batchsize
-            for batch in range(int(num_batches) + 1):
+            num_batches = int(total_n / batchsize) + 1
+            for batch in range(num_batches):
                 start = batch * batchsize
                 end = (batch + 1) * batchsize
                 batch_X = torch.Tensor(X_test[:, start:end])
@@ -254,21 +254,24 @@ if __name__ == '__main__':
     print(X_test.shape)
     print(y_test.shape)
 
-    config = dict()
-    config["input_dims"] = [300, 5, 20]
-    hl = 100
-    ha = 50
-    hv = 30
+    while True:
+        config = dict()
+        config["input_dims"] = [300, 5, 20]
+        hl = 100
+        ha = 50
+        hv = 30
 
-    config["h_dims"] = [hl, ha, hv]
+        config["h_dims"] = [hl, ha, hv]
 
-    config["final_dims"] = 100
-    config["batchsize"] = 16
-    config["num_epochs"] = 20
-    config["lr"] = 0.0006
-    config["h_dim"] = 128
-    config['dropout1'] = 0.5
-    config['dropout2'] = 0.2
-    config['a'] = 0.3
-    train_net(X_train, y_train, y_train_sentiment, X_valid, y_valid, y_valid_sentiment, X_test, y_test,
-              y_test_sentiment, config)
+        config["final_dims"] = 100
+        config["batchsize"] = 16
+        config["num_epochs"] = 20
+        config["lr"] = 0.0006
+        config["h_dim"] = 128
+        config['dropout1'] = 0.5
+        config['dropout2'] = 0.2
+        config['a'] = 0.3
+
+        train_net(X_train, y_train, y_train_sentiment, X_valid, y_valid, y_valid_sentiment, X_test, y_test,
+                  y_test_sentiment, config)
+
