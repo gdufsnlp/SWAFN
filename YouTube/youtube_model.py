@@ -1,6 +1,4 @@
 import numpy as np
-# from process_data import *
-
 import random
 import torch
 
@@ -170,8 +168,8 @@ def train_net(X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentim
         epoch_loss = 0
         model.train()
         total_n = X_train_emb.shape[1]
-        num_batches = total_n / batchsize
-        for batch in range(int(num_batches)):
+        num_batches = int(total_n / batchsize) + 1
+        for batch in range(num_batches):
             start = batch * batchsize
             end = (batch + 1) * batchsize
             optimizer.zero_grad()
@@ -274,9 +272,6 @@ if __name__ == '__main__':
     y_valid_sentiment = np.load('y_valid_sentiment.npy')
     y_test_sentiment = np.load('y_test_sentiment.npy')
 
-    train_mask = np.load('train_mask.npy')
-    valid_mask = np.load('valid_mask.npy')
-    test_mask = np.load('test_mask.npy')
 
     X_train_emb = X_train_emb.swapaxes(0, 1)
     X_valid_emb = X_valid_emb.swapaxes(0, 1)
@@ -309,14 +304,12 @@ if __name__ == '__main__':
     config["num_epochs"] = 25
     config["lr"] = 0.0005
     config["h_dim"] = 100
-    config['dropout1'] = 0.5
-    config['dropout2'] = 0.1
+    config['dropout1'] = 0.3
+    config['dropout2'] = 0.3
 
     config['a'] = 0.25
 
     train_net(X_train_emb, X_train_vedio, X_train_audio, y_train, y_train_sentiment, X_valid_emb, X_valid_vedio,
               X_valid_audio,
               y_valid, X_test_emb, X_test_vedio, X_test_audio, y_test, config)
-
-
 
