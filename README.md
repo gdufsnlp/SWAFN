@@ -9,8 +9,7 @@ sklearn,
 h5py  
 
 ### Datasets:
-The YouTube dataset is already in the YouTube folder. The MOSI dataset and MOSEI dataset can be downlowded at http://immortal.multicomp.cs.cmu.edu/raw_datasets/processed_data/cmu-mosi/seq_length_20/ and http://immortal.multicomp.cs.cmu.edu/raw_datasets/processed_data/cmu-mosei/seq_length_20/data/ respectively. Put the dataset to the corresponding folder.(same as that of YouTube)
-
+The MOSI dataset, MOSEI dataset and YouTube dataset can be downlowded at http://immortal.multicomp.cs.cmu.edu/raw_datasets/processed_data/cmu-mosi/seq_length_20/, http://immortal.multicomp.cs.cmu.edu/raw_datasets/processed_data/cmu-mosei/seq_length_20/data/ and https://github.com/pliang279/MFN/tree/master/new_data/youtube respectively. Put the downloaded datasets to the corresponding folder.
 ### Run the code:
 To train and test on CMU-MOSI dataset, run:     
 `python MOSI/mosi_model.py`
