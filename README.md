@@ -1,5 +1,7 @@
 # SWAFN
-Code for Paper "SWAFN: Sentimental Words Aware Fusion Network for Multimodal Sentiment Analysis", COLING2020
+Code for Paper "SWAFN: Sentimental Words Aware Fusion Network for Multimodal Sentiment Analysis"
+COLING2020, Pages: 1067-1077
+Minping Chen, Xia Li
 
 
 ### Requires:  
